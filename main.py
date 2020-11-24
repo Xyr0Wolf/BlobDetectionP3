@@ -46,7 +46,6 @@ class Camshift:
                      cv.TERM_CRITERIA_COUNT, 10, 1)
 
         while True:
-
             ret, frame = cap.read()
 
             #Resize the video frames.
