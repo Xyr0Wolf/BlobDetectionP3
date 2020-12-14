@@ -3,7 +3,7 @@ class TrackingMarker:
     #Number of positions the marker remembers
     frame_store_count = 5
     #Distance along either x or y that indicates if marker is moving
-    movement_breakpoint = 3
+    movement_breakpoint = 2
 
     def __init__(self):
         self.positions = []
