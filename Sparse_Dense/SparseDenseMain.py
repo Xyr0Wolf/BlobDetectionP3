@@ -40,9 +40,9 @@ if makeDaxHappy:
                 break
 
             sparse.run(new_frame)
-            print(sparse.getCenterPoint())
-            print(sparse.getMoveDirection())
-        sparse.Release()
+            print(sparse.getPosition())
+            print(sparse.getDirection())
+        sparse.release()
         video_cap.release()
 else:
 

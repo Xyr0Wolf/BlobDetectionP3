@@ -29,6 +29,10 @@ class SparseHappyDax():
 
         self.blur_power = 15
 
+        self.cur_frame = None
+        self.cur_gray_frame = None
+        self.good_new = None
+
         self.tracking_markers = []
         self.moving_markers = []
 
@@ -36,6 +40,9 @@ class SparseHappyDax():
         self.prev_gray_frame = None
 
         self.draw_mask = None
+
+        self.tracked_position = ()
+        self.tracked_direction = ()
 
     def findTrackingPoints(self, video_frame_gray):
 
@@ -97,23 +104,20 @@ class SparseHappyDax():
             self.prev_points = self.findTrackingPoints(self.prev_gray_frame)
             return
 
-        cur_points = None
-        cur_frame = optimized_frame
-        cur_frame = self.optimizeFrame(cur_frame)
-        cur_gray_frame = cv.cvtColor(cur_frame, cv.COLOR_BGR2GRAY)
+        self.cur_frame = optimized_frame
+        self.cur_gray_frame = cv.cvtColor(self.cur_frame, cv.COLOR_BGR2GRAY)
 
-        if self.prev_points is not None:
-            # Calculates sparse optical flow by Lucas-Kanade method
-            # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
-            cur_points, status, error = cv.calcOpticalFlowPyrLK(self.prev_gray_frame, cur_gray_frame, self.prev_points, None, **self.lk_params)
+        # Calculates sparse optical flow by Lucas-Kanade method
+        # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
+        cur_points, status, error = cv.calcOpticalFlowPyrLK(self.prev_gray_frame, self.cur_gray_frame, self.prev_points, None, **self.lk_params)
 
-            # If points were lost we need to adjust our markers appropriately
-            if self.prev_points.__len__() != self.tracking_markers.__len__():
-                self.clearLostMarkers()
+        # If points were lost we need to adjust our markers appropriately
+        if self.prev_points.__len__() != self.tracking_markers.__len__():
+            self.clearLostMarkers()
 
         if cur_points is not None and self.no_movement_timer < self.no_movement_reset_time:
             # Selects good feature points for next position
-            good_new = cur_points[status == 1]
+            self.good_new = cur_points[status == 1]
 
             self.updateTrackingMarkers(cur_points)
 
@@ -124,13 +128,24 @@ class SparseHappyDax():
                 self.no_movement_timer += 1
         else:
             #Reset
-            self.prev_points = self.findTrackingPoints(cur_gray_frame)
-            self.prev_gray_frame = cur_gray_frame
+            self.prev_points = self.findTrackingPoints(self.cur_gray_frame)
+            self.prev_gray_frame = self.cur_gray_frame
             self.no_movement_timer = 0
             return
 
+        self.calculateCenterPoint()
+        self.calculateMoveDirection()
+
+        # Everything related to drawing is probably unnecessary for anyone using this code? just here for local testing
+        self.drawTracking()
+
+        # Updates previous frame
+        self.prev_gray_frame = self.cur_gray_frame.copy()
+        self.prev_points = self.good_new.reshape(-1, 1, 2)
+
+    def drawTracking(self):
         #Reset draw_mask
-        self.draw_mask = np.zeros_like(cur_frame)
+        self.draw_mask = np.zeros_like(self.cur_frame)
 
         #Draw the graphics for each marker, old way and new way
         self.drawMovementTracks()
@@ -140,24 +155,21 @@ class SparseHappyDax():
             self.drawPosAndDir()
 
         # Overlays the optical flow tracks on the original frame
-        output = cv.add(cur_frame, self.draw_mask)
+        output = cv.add(self.cur_frame, self.draw_mask)
 
-        # Updates previous frame
-        self.prev_gray_frame = cur_gray_frame.copy()
-        self.prev_points = good_new.reshape(-1, 1, 2)
-        # Not entirely sure why good_new couldn't just have been cur_points, but this works better?
 
         # Opens a new window and displays the output frame
         cv.imshow("sparse optical flow", output)
-        cv.imshow("grey image", cur_gray_frame)
+        cv.imshow("grey image", self.cur_gray_frame)
 
         # This is literally just here so I can run the code and have the images render, delete whenever
         if cv.waitKey(1):
             1+1
 
-    def Release(self):
+    def release(self):
         # The following frees up resources and closes all windows
         cv.destroyAllWindows()
+        # Maybe kinda pointless when being used by another system?
 
     def drawMovementTracks(self):
         # Draws the optical flow tracks
@@ -176,7 +188,7 @@ class SparseHappyDax():
             #Draw circle at current position
             self.draw_mask = cv.circle(self.draw_mask, marker.positions[-1], 3, trackColor, -1)
 
-    def getCenterPoint(self):
+    def calculateCenterPoint(self):
 
         center_point = (0,0)
         if self.moving_markers.__len__() > 0:
@@ -190,9 +202,12 @@ class SparseHappyDax():
             average_x = add_pos_x / self.moving_markers.__len__()
             average_y = add_pos_y / self.moving_markers.__len__()
             center_point = (int(average_x), int(average_y))
-        return center_point
+        self.tracked_position = center_point
 
-    def getMoveDirection(self):
+    def getPosition(self):
+        return self.tracked_position
+
+    def calculateMoveDirection(self):
         move_direction = (0, 0)
         if self.moving_markers.__len__() > 0:
             add_dir_x = 0
@@ -205,19 +220,22 @@ class SparseHappyDax():
             average_dir_x = add_dir_x / self.moving_markers.__len__()
             average_dir_y = add_dir_y / self.moving_markers.__len__()
             move_direction = (int(average_dir_x), int(average_dir_y))
-        return move_direction
+        self.tracked_direction = move_direction
+
+    def getDirection(self):
+        return self.tracked_direction
 
     def drawPosAndDir(self):
         self.drawPos()
         self.drawDir()
 
     def drawPos(self):
-        position = self.getCenterPoint()
+        position = self.getPosition()
         self.draw_mask = cv.circle(self.draw_mask, position, 10, self.color_pos_dir, -1)
 
     def drawDir(self):
-        position = self.getCenterPoint()
-        direction = self.getMoveDirection()
+        position = self.getPosition()
+        direction = self.getDirection()
 
         offsetPos = (position[0] + direction[0], position[1] + direction[1])
         self.draw_mask = cv.line(self.draw_mask, position, offsetPos, self.color_pos_dir, 2)
