@@ -60,16 +60,15 @@ class OpticalFlowSparse:
         # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
         cur_points, status, error = cv.calcOpticalFlowPyrLK(self.__prev_gray_frame, cur_gray_frame, self.__prev_points, None, **self.__lk_params)
 
-        # If points were lost we need to adjust our markers appropriately
-        if self.__prev_points.__len__() != self.__tracking_markers.__len__():
-            self.__clearLostMarkers()
-
         # We need to actively be looking for new tracking point so we can recognize when the cat enter view
         if cur_points is not None and self.__no_movement_timer < self.__no_movement_reset_time:
             # Selects good feature points for next position
+            self.__updateTrackingMarkers(cur_points)
             good_new = cur_points[status == 1]
 
-            self.__updateTrackingMarkers(cur_points)
+            # If points were lost we need to adjust our markers appropriately
+            if good_new.__len__() != self.__tracking_markers.__len__():
+                self.__clearBadMarkers(good_new)
 
             #If we have enough moving markers, reset the reset counter
             if self.__moving_markers.__len__() > self.__moving_markers_lock:
@@ -112,12 +111,12 @@ class OpticalFlowSparse:
 
         return found_points
 
-    def __clearLostMarkers(self):
-        for x in range(self.__prev_points.__len__()):
-            while self.__tracking_markers[x].testSamePosition(self.__prev_points[x]) == False:
+    def __clearBadMarkers(self, good_new):
+        for x in range(good_new.__len__()):
+            while self.__tracking_markers[x].testSamePosition(good_new[x]) == False:
                 self.__tracking_markers.remove(self.__tracking_markers[x])
         # Above loop won't remove markers past the last index, do that here
-        while self.__tracking_markers.__len__() > self.__prev_points.__len__():
+        while self.__tracking_markers.__len__() > good_new.__len__():
             self.__tracking_markers.remove(self.__tracking_markers[-1])
 
     def __updateTrackingMarkers(self, cur_points):

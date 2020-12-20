@@ -28,8 +28,12 @@ class TrackingMarker:
             self.positions.pop(0)
 
     def testSamePosition(self, test_position):
-        pos_x = test_position[0][0]
-        pos_y = test_position[0][1]
+        if test_position.__len__() == 1:
+            pos_x = test_position[0][0]
+            pos_y = test_position[0][1]
+        else:
+            pos_x = test_position[0]
+            pos_y = test_position[1]
 
         return pos_x == self.positions[-1][0] and pos_y == self.positions[-1][1]
 
