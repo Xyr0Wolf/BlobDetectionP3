@@ -38,8 +38,6 @@ class OpticalFlowSparseDataTest:
         self.__tracked_position = ()
         self.__tracked_direction = ()
 
-        self.__graphics = Graphics()
-
         # Data test processing
         self.__data_processor = DataProcessor()
 

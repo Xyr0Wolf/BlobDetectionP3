@@ -35,8 +35,6 @@ class OpticalFlowSparse:
         self.__tracked_position = ()
         self.__tracked_direction = ()
 
-        self.__graphics = Graphics()
-
     def run(self, video_frame):
 
         if video_frame is None:
