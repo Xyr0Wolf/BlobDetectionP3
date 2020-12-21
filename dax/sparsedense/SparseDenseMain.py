@@ -1,7 +1,7 @@
-from Sparse_Dense.sparse_flow import SparseOpticalFlow
-from Sparse_Dense.dense_flow import DenseOpticalFlow
-from Sparse_Dense.sparse_flow_v2 import SparseOpticalFlowMod
-from Sparse_Dense.sparse_flow_vHappyDax import SparseHappyDax
+from sparsedense.sparse_flow import SparseOpticalFlow
+from sparsedense.dense_flow import DenseOpticalFlow
+from sparsedense.sparse_flow_v2 import SparseOpticalFlowMod
+from sparsedense.sparse_flow_vHappyDax import SparseHappyDax
 import cv2 as cv
 import os
 

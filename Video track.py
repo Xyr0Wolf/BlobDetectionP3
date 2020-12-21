@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 
 #Video Insert and decoding
-cap = cv2.VideoCapture('videoplayback.mp4')
+cap = cv2.VideoCapture('http://10.166.49.61:8080/video')
 frame_width = int( cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height =int( cap.get( cv2.CAP_PROP_FRAME_HEIGHT))
 fourcc = cv2.VideoWriter_fourcc('D','I','V','X')
-out = cv2.VideoWriter("output.mp4", fourcc, 5.0, (1280,720))
+out = cv2.VideoWriter("output.mp4v", fourcc, 5.0, (1280,720))
 #framerate
 ret, frame1 = cap.read()
 ret, frame2 = cap.read()

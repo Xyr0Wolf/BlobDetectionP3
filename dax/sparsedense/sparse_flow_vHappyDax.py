@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from TrackingMarker import TrackingMarker
+from sparsedense.trackingmarker import TrackingMarker
 
 class SparseHappyDax():
 
@@ -137,7 +137,7 @@ class SparseHappyDax():
         self.calculateMoveDirection()
 
         # Everything related to drawing is probably unnecessary for anyone using this code? just here for local testing
-        self.drawTracking()
+        #self.drawTracking()
 
         # Updates previous frame
         self.prev_gray_frame = self.cur_gray_frame.copy()
@@ -205,7 +205,7 @@ class SparseHappyDax():
         self.tracked_position = center_point
 
     def getPosition(self):
-        return self.tracked_position
+        return np.array(self.tracked_position)
 
     def calculateMoveDirection(self):
         move_direction = (0, 0)
@@ -223,7 +223,7 @@ class SparseHappyDax():
         self.tracked_direction = move_direction
 
     def getDirection(self):
-        return self.tracked_direction
+        return np.array(self.tracked_direction)
 
     def drawPosAndDir(self):
         self.drawPos()
@@ -231,11 +231,11 @@ class SparseHappyDax():
 
     def drawPos(self):
         position = self.getPosition()
-        self.draw_mask = cv.circle(self.draw_mask, position, 10, self.color_pos_dir, -1)
+        self.draw_mask = cv.circle(self.draw_mask, tuple(position), 10, self.color_pos_dir, -1)
 
     def drawDir(self):
         position = self.getPosition()
         direction = self.getDirection()
 
         offsetPos = (position[0] + direction[0], position[1] + direction[1])
-        self.draw_mask = cv.line(self.draw_mask, position, offsetPos, self.color_pos_dir, 2)
+        self.draw_mask = cv.line(self.draw_mask, tuple(position), offsetPos, self.color_pos_dir, 2)
