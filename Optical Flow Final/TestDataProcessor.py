@@ -66,5 +66,3 @@ class DataProcessor:
         ax2.violinplot(data)
 
         plt.show()
-
-        plt.show()
